@@ -22,28 +22,33 @@ import pickle
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-physical_devices = tf.config.list_physical_devices('GPU') 
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+import alex
 
 from keras.models import load_model
 
 
-
+physical_devices = tf.config.list_physical_devices('GPU') 
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 ######### Config #########
+
+# New,Transfer of Load
+train = "New"
+
+
 data_augmentation_level = 2
-batch_size  = 16
+batch_size  = 64
 img_height = 227 # or 160
 img_width = 227  # or 160
 input_shape = (img_height,img_width,3)
 trainingset_dir = "dataset"
 epochs=32
+
 #################
-  ## New,Transfer of Load
-train = "Load"
+
 ################
 
 models_dir = 'models/'
@@ -133,31 +138,7 @@ def savemodel(model,problem):
 ########################## Main function #########################
 def execute(train=train):
   if train== "New":
-    model = Sequential([
-      layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
-      data_augmentation,
-      layers.Conv2D(16, 3, padding='same', activation='relu'),
-      layers.MaxPooling2D(),
-      layers.Conv2D(32, 3, padding='same', activation='relu'),
-      layers.MaxPooling2D(),
-      layers.Conv2D(64, 3, padding='same', activation='relu'),
-      layers.MaxPooling2D(),
-      layers.Dropout(0.2),
-      layers.Flatten(),
-      layers.Dense(128, activation='relu'),
-      layers.Dense(num_classes,activation="softmax")
-    ])
-    
-    model.compile(optimizer='adam',
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                  metrics=['accuracy'])
-
-    model.summary()
-    history = model.fit(
-      train_ds,
-      validation_data=val_ds,
-      epochs=epochs
-    )
+    history,epochs = alex.execute()
 
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
@@ -180,9 +161,7 @@ def execute(train=train):
     plt.legend(loc='upper right')
     plt.title('Training and validation Loss')
     plt.show()
-
-
-    savemodel(model,"Cl")
+  
   elif train == "Transfer":
     IMG_SIZE = (160,160)
     preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
