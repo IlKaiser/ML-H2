@@ -108,7 +108,6 @@ def execute():
         layers.Dense(1000, activation= 'relu'),
         layers.Dense(num_classes, activation= 'softmax')
     ])
-    #model = AlexNet((227, 227, 3), num_classes)
     model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
@@ -120,6 +119,6 @@ def execute():
                         validation_data=val_ds)
 
 
-    model_dir = "my_model.h5" 
+    model_dir = "models/alex.h5" 
     model.save(model_dir)
     return history,EPOCHS

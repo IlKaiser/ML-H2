@@ -37,12 +37,19 @@ print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('
 
 # New,Transfer of Load
 train = "New"
-
+# Model to load in case load is chosen
+load  = "Tr" 
 
 data_augmentation_level = 2
 batch_size  = 64
-img_height = 227 # or 160
-img_width = 227  # or 160
+
+if load != "alex":
+  img_height = 227
+  img_width  = 227
+else:
+  img_height = 160
+  img_width  = 160
+
 input_shape = (img_height,img_width,3)
 trainingset_dir = "dataset"
 epochs=32
@@ -136,7 +143,7 @@ def savemodel(model,problem):
 
 
 ########################## Main function #########################
-def execute(train=train):
+def execute(train=train,load=load):
   if train== "New":
     history,epochs = alex.execute()
 
@@ -269,9 +276,16 @@ def execute(train=train):
     plt.show()
     savemodel(model,"Tr")
   else:
-    #model = tf.keras.models.load_model('models/Cl.h5')
-    #model = tf.keras.models.load_model('models/Tr.h5')
-    model = tf.keras.models.load_model('models/my_model.h5')
+    if   load == "Cl":
+      model = tf.keras.models.load_model('models/Cl.h5')
+    elif load == "Tr":
+      model = tf.keras.models.load_model('models/Tr.h5')
+    else:
+      model = tf.keras.models.load_model('models/my_model.h5')
+
+  ################ Verify #####################
+
+  
   #Retrieve a batch of images from the test set
   loss0, accuracy0 = model.evaluate(val_ds)
   image_batch, label_batch = test_ds.as_numpy_iterator().next()
@@ -279,13 +293,11 @@ def execute(train=train):
   print("loss: {:.2f}".format(loss0))
   print("accuracy: {:.2f}".format(accuracy0))
 
+
   predictions = model.predict(image_batch)
   score = []
   for p in predictions:
     score.append(tf.nn.softmax(p))
-
-  #print('Predictions:\n', predictions.numpy())
-  #print('Labels:\n', label_batch)
 
   plt.figure(figsize=(10, 10))
   for i in range(9):
@@ -295,9 +307,6 @@ def execute(train=train):
     plt.axis("off")
 
 
-
-
-  ################ Verify #####################
   img = tf.keras.preprocessing.image.load_img(
       "test/juice.jpg", target_size=(img_height, img_width)
   )
@@ -324,7 +333,7 @@ def execute(train=train):
 
     plt.xlabel("{} {:2.0f}% ({})".format(classnames[predicted_label],
                                   100*np.max(score),
-                                  "crkr"),
+                                  "class"),
                                   color=color)
 
   def plot_value_array(i, predictions_array, true_label):
@@ -348,9 +357,7 @@ def execute(train=train):
   i = 0
   plt.figure(figsize=(6,3))
   plt.subplot(1,2,1)
-  plot_image(i, predictions[i], "crk", img)
+  plot_image(i, predictions[i], "class", img)
   plt.subplot(1,2,2)
   plot_value_array(i, predictions[i], 0)
   plt.show()
-
-execute()
