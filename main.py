@@ -33,96 +33,6 @@ tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
-######### Config #########
-
-# New,Transfer of Load
-train = "New"
-# Model to load in case load is chosen
-load  = "Tr" 
-
-data_augmentation_level = 2
-batch_size  = 64
-
-if load != "alex":
-  img_height = 227
-  img_width  = 227
-else:
-  img_height = 160
-  img_width  = 160
-
-input_shape = (img_height,img_width,3)
-trainingset_dir = "dataset"
-epochs=32
-
-#################
-
-################
-
-models_dir = 'models/'
-##########################
-
-######################### Dataset ############################
-train_datagen = ImageDataGenerator(
-      rescale = 1. / 255,\
-      zoom_range=0.1,\
-      rotation_range=20,\
-      width_shift_range=0.1,\
-      height_shift_range=0.1,\
-      horizontal_flip=True,\
-      vertical_flip=False,
-      validation_split=0.2)
-
-train_shuffle = True
-
-train_generator = train_datagen.flow_from_directory(
-    directory=trainingset_dir,
-    target_size=(227, 227),
-    color_mode="rgb",
-    batch_size=batch_size,
-    class_mode="categorical",
-    shuffle=train_shuffle)
-
-num_samples = train_generator.n
-num_classes = train_generator.num_classes
-
-classnames = [k for k,v in train_generator.class_indices.items()]
-print("Image input %s" %str(input_shape))
-print("Classes: %r" %classnames)
-
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    trainingset_dir,
-    validation_split=0.2,
-    subset="training",
-    seed=123,
-    image_size=(img_height, img_width),
-    batch_size=batch_size)
-
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  trainingset_dir,
-  validation_split=0.2,
-  subset="validation",
-  seed=123,
-  image_size=(img_height, img_width),
-  batch_size=batch_size)
-
-val_batches = tf.data.experimental.cardinality(val_ds)
-test_ds = val_ds.take(val_batches // 5)
-val_ds  = val_ds.skip(val_batches // 5)
-
-AUTOTUNE = tf.data.experimental.AUTOTUNE
-
-train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
-val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
-
-data_augmentation = tf.keras.Sequential(
-    [
-      layers.experimental.preprocessing.RandomFlip("horizontal", 
-                                                  input_shape=input_shape),
-      layers.experimental.preprocessing.RandomRotation(0.1),
-      layers.experimental.preprocessing.RandomZoom(0.1),
-    ]
-  )
-############################################################################
 
 ############################################################################
 def loadmodel(problem):
@@ -143,7 +53,94 @@ def savemodel(model,problem):
 
 
 ########################## Main function #########################
-def execute(train=train,load=load):
+def execute(train="Load",load="Tr"):
+  
+  ######### Config #########
+
+  data_augmentation_level = 2
+  batch_size  = 64
+
+  if load == "alex":
+    img_height = 227
+    img_width  = 227
+  else:
+    img_height = 160
+    img_width  = 160
+
+  input_shape = (img_height,img_width,3)
+  trainingset_dir = "dataset"
+  epochs=32
+
+  #################
+
+  ################
+
+  models_dir = 'models/'
+  ##########################
+
+  ######################### Dataset ############################
+  train_datagen = ImageDataGenerator(
+        rescale = 1. / 255,\
+        zoom_range=0.1,\
+        rotation_range=20,\
+        width_shift_range=0.1,\
+        height_shift_range=0.1,\
+        horizontal_flip=True,\
+        vertical_flip=False,
+        validation_split=0.2)
+
+  train_shuffle = True
+
+  train_generator = train_datagen.flow_from_directory(
+      directory=trainingset_dir,
+      target_size=(227, 227),
+      color_mode="rgb",
+      batch_size=batch_size,
+      class_mode="categorical",
+      shuffle=train_shuffle)
+
+  num_samples = train_generator.n
+  num_classes = train_generator.num_classes
+
+  classnames = [k for k,v in train_generator.class_indices.items()]
+  print("Image input %s" %str(input_shape))
+  print("Classes: %r" %classnames)
+
+  train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+      trainingset_dir,
+      validation_split=0.2,
+      subset="training",
+      seed=123,
+      image_size=(img_height, img_width),
+      batch_size=batch_size)
+
+  val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    trainingset_dir,
+    validation_split=0.2,
+    subset="validation",
+    seed=123,
+    image_size=(img_height, img_width),
+    batch_size=batch_size)
+
+  val_batches = tf.data.experimental.cardinality(val_ds)
+  test_ds = val_ds.take(val_batches // 5)
+  val_ds  = val_ds.skip(val_batches // 5)
+
+  AUTOTUNE = tf.data.experimental.AUTOTUNE
+
+  train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
+  val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+  data_augmentation = tf.keras.Sequential(
+      [
+        layers.experimental.preprocessing.RandomFlip("horizontal", 
+                                                    input_shape=input_shape),
+        layers.experimental.preprocessing.RandomRotation(0.1),
+        layers.experimental.preprocessing.RandomZoom(0.1),
+      ]
+    )
+  ############################################################################
+
   if train== "New":
     history,epochs = alex.execute()
 
@@ -276,16 +273,14 @@ def execute(train=train,load=load):
     plt.show()
     savemodel(model,"Tr")
   else:
-    if   load == "Cl":
-      model = tf.keras.models.load_model('models/Cl.h5')
-    elif load == "Tr":
+    if load == "Tr":
       model = tf.keras.models.load_model('models/Tr.h5')
     else:
-      model = tf.keras.models.load_model('models/my_model.h5')
+      model = tf.keras.models.load_model('models/alex.h5')
 
   ################ Verify #####################
 
-  
+
   #Retrieve a batch of images from the test set
   loss0, accuracy0 = model.evaluate(val_ds)
   image_batch, label_batch = test_ds.as_numpy_iterator().next()
@@ -308,7 +303,7 @@ def execute(train=train,load=load):
 
 
   img = tf.keras.preprocessing.image.load_img(
-      "test/juice.jpg", target_size=(img_height, img_width)
+      "test/dw2.jpg", target_size=(img_height, img_width)
   )
   img_array = tf.keras.preprocessing.image.img_to_array(img)
   img_array = tf.expand_dims(img_array, 0) # Create a batch
