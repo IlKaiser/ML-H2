@@ -11,7 +11,9 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 from tensorflow.keras import layers
 
+############# Alex Net Training #######################
 def execute():
+  # loading data and setup
     EPOCHS = 100
     BATCH_SIZE   = batch_size = 64
     image_height = img_height = 227
@@ -52,7 +54,6 @@ def execute():
         batch_size=batch_size)
 
     val_batches = tf.data.experimental.cardinality(val_ds)
-    #test_ds = val_ds.take(val_batches // 5)
     val_ds  = val_ds.skip(val_batches // 5)
     AUTOTUNE = tf.data.experimental.AUTOTUNE
     train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
@@ -68,6 +69,7 @@ def execute():
       layers.experimental.preprocessing.RandomZoom(0.1),
     ]
   )
+  # creating the model
     model = Sequential([
         layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
         data_augmentation,
